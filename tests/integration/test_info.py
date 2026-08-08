@@ -10,4 +10,4 @@ async def test_info_check() -> None:
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/info")
     assert response.status_code == 200
-    assert response.json() == {"name": "Work Order API", "environment": "development"}
+    assert response.json() == {"name": "Work Order API", "environment": "test"}

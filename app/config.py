@@ -6,6 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_name: str = "Work Order API"
     environment: Literal["development", "test", "production"] = "development"
+    database_url: str
 
     model_config = SettingsConfigDict(
         env_prefix="WORK_ORDER_",
@@ -14,4 +15,4 @@ class Settings(BaseSettings):
     )
 
 
-settings = Settings()
+settings = Settings()  # pyright: ignore[reportCallIssue]
