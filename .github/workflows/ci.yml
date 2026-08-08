@@ -11,6 +11,11 @@ jobs:
   quality:
     runs-on: ubuntu-latest
 
+    env:
+      POSTGRES_DB: ci_unused
+      POSTGRES_USER: ci_unused
+      POSTGRES_PASSWORD: ci_unused
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -24,5 +29,12 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --all-groups
 
+      - name: Start test database
+        run: docker compose up -d --wait postgres_test
+
       - name: Run quality checks
         run: ./scripts/check.sh
+
+      - name: Stop test database
+        if: always()
+        run: docker compose down --volumes
