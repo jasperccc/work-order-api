@@ -3,6 +3,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from app.enums import UserRole
+
 
 class UserRegister(BaseModel):
     email: EmailStr
@@ -14,6 +16,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     is_active: bool
     created_at: datetime
+    role: UserRole
 
     model_config = ConfigDict(from_attributes=True)
 

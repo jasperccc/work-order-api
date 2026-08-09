@@ -24,6 +24,7 @@ async def test_register_returns_created_user_without_password(
     assert isinstance(response_body["id"], int)
     assert response_body["email"] == "api-user@example.com"
     assert response_body["is_active"] is True
+    assert response_body["role"] == "user"
     assert "created_at" in response_body
     assert "password" not in response_body
     assert "password_hash" not in response_body
