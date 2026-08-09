@@ -4,3 +4,7 @@ class EmailAlreadyRegisteredError(Exception):
 
 class InvalidCredentialsError(Exception):
     """邮箱或密码错误。"""
+
+
+class InvalidTokenError(Exception):
+    """访问token无效。"""

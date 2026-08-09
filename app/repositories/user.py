@@ -29,3 +29,9 @@ class UserRepository:
     async def rollback(self) -> None:
         """回滚当前事务。"""
         await self.session.rollback()
+
+    async def get_by_id(self, user_id: int) -> User | None:
+        """查询用户id"""
+        statement = select(User).where(User.id == user_id)
+        result = await self.session.scalars(statement)
+        return result.one_or_none()
