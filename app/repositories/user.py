@@ -21,3 +21,11 @@ class UserRepository:
         self.session.add(user)
         await self.session.flush()
         return user
+
+    async def commit(self) -> None:
+        """提交当前事务。"""
+        await self.session.commit()
+
+    async def rollback(self) -> None:
+        """回滚当前事务。"""
+        await self.session.rollback()
