@@ -2,6 +2,7 @@ import os
 from collections.abc import AsyncIterator
 
 import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -15,6 +16,8 @@ os.environ["WORK_ORDER_DATABASE_URL"] = (
 )
 
 from app.config import settings
+from app.database import get_session
+from app.main import app
 from app.models import Base
 
 
@@ -39,3 +42,23 @@ async def db_session() -> AsyncIterator[AsyncSession]:
             await connection.run_sync(Base.metadata.drop_all)
 
         await test_engine.dispose()
+
+
+@pytest_asyncio.fixture
+async def api_client(
+    db_session: AsyncSession,
+) -> AsyncIterator[AsyncClient]:
+    async def override_get_session() -> AsyncIterator[AsyncSession]:
+        yield db_session
+
+    app.dependency_overrides[get_session] = override_get_session
+    transport = ASGITransport(app=app)
+
+    try:
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+        ) as client:
+            yield client
+    finally:
+        app.dependency_overrides.pop(get_session, None)
