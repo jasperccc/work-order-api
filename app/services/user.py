@@ -1,9 +1,9 @@
 from sqlalchemy.exc import IntegrityError
 
-from app.exceptions import EmailAlreadyRegisteredError
+from app.exceptions import EmailAlreadyRegisteredError, InvalidCredentialsError
 from app.models import User
 from app.repositories.user import UserRepository
-from app.security import hash_password
+from app.security import hash_password, verify_password
 
 
 class UserService:
@@ -28,3 +28,14 @@ class UserService:
             await self.repository.rollback()
             raise
         return created_user
+
+    async def authenticate(self, email: str, password: str) -> User:
+        user = await self.repository.get_by_email(email)
+
+        if user is None or not verify_password(password, user.password_hash):
+            raise InvalidCredentialsError("邮箱或密码错误")
+
+        if not user.is_active:
+            raise InvalidCredentialsError("邮箱或密码错误")
+
+        return user

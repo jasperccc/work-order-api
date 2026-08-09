@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
+os.environ["WORK_ORDER_JWT_SECRET_KEY"] = "test-secret-key-not-for-production"
 os.environ["WORK_ORDER_ENVIRONMENT"] = "test"
 os.environ["WORK_ORDER_DATABASE_URL"] = (
     "postgresql+asyncpg://work_order_test:"

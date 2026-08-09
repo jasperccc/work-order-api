@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 from app.config import settings
-from app.exceptions import EmailAlreadyRegisteredError
+from app.exceptions import EmailAlreadyRegisteredError, InvalidCredentialsError
 from app.routers.auth import router as auth_router
 
 app = FastAPI(title=settings.app_name)
@@ -18,6 +18,18 @@ async def handle_email_already_registered(
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
         content={"detail": str(exc)},
+    )
+
+
+@app.exception_handler(InvalidCredentialsError)
+async def handle_invalid_credentials(
+    _request: Request,
+    exc: InvalidCredentialsError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={"detail": str(exc)},
+        headers={"WWW-Authenticate": "Bearer"},
     )
 
 

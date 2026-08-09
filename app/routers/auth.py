@@ -1,7 +1,8 @@
 from fastapi import APIRouter, status
 
 from app.dependencies import UserServiceDependency
-from app.schemas.user import UserRegister, UserResponse
+from app.schemas.user import TokenResponse, UserLogin, UserRegister, UserResponse
+from app.security import create_access_token
 
 router = APIRouter(
     prefix="/api/auth",
@@ -24,3 +25,21 @@ async def register_user(
     )
 
     return UserResponse.model_validate(user)
+
+
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def login_user(
+    data: UserLogin,
+    service: UserServiceDependency,
+) -> TokenResponse:
+    user = await service.authenticate(
+        email=data.email,
+        password=data.password,
+    )
+    access_token = create_access_token(str(user.id))
+
+    return TokenResponse(access_token=access_token)
