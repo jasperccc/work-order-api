@@ -8,8 +8,10 @@ from app.database import get_session
 from app.exceptions import InvalidTokenError
 from app.models import User
 from app.repositories.user import UserRepository
+from app.repositories.work_order import WorkOrderRepository
 from app.security import decode_access_token
 from app.services.user import UserService
+from app.services.work_order import WorkOrderService
 
 SessionDependency = Annotated[
     AsyncSession,
@@ -27,6 +29,17 @@ async def get_user_service(
 UserServiceDependency = Annotated[
     UserService,
     Depends(get_user_service),
+]
+
+
+async def get_work_order_service(session: SessionDependency) -> WorkOrderService:
+    repository = WorkOrderRepository(session)
+    return WorkOrderService(repository)
+
+
+WorkOrderServiceDependency = Annotated[
+    WorkOrderService,
+    Depends(get_work_order_service),
 ]
 
 bearer_scheme = HTTPBearer()

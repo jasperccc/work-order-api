@@ -9,11 +9,13 @@ from app.exceptions import (
 )
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
+from app.routers.work_orders import router as work_orders_router
 
 app = FastAPI(title=settings.app_name)
 
 app.include_router(auth_router)
 app.include_router(users_router)
+app.include_router(work_orders_router)
 
 
 @app.exception_handler(EmailAlreadyRegisteredError)
