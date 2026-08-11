@@ -6,6 +6,7 @@ from app.exceptions import (
     EmailAlreadyRegisteredError,
     InvalidCredentialsError,
     InvalidTokenError,
+    WorkOrderNotFoundError,
 )
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
@@ -50,6 +51,17 @@ async def handle_invalid_token(
         status_code=status.HTTP_401_UNAUTHORIZED,
         content={"detail": str(exc)},
         headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
+@app.exception_handler(WorkOrderNotFoundError)
+async def handle_work_order_not_found(
+    _request: Request,
+    exc: WorkOrderNotFoundError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content={"detail": str(exc)},
     )
 
 

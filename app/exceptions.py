@@ -8,3 +8,7 @@ class InvalidCredentialsError(Exception):
 
 class InvalidTokenError(Exception):
     """访问token无效。"""
+
+
+class WorkOrderNotFoundError(Exception):
+    """工单不存在或当前用户无权访问。"""

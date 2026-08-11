@@ -30,3 +30,8 @@ class WorkOrderRepository:
         )
         result = await self.session.scalars(statement)
         return list(result.all())
+
+    async def get_by_id(self, work_order_id: int) -> WorkOrder | None:
+        statement = select(WorkOrder).where(WorkOrder.id == work_order_id)
+        result = await self.session.scalars(statement)
+        return result.one_or_none()
