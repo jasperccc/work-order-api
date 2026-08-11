@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import WorkOrder
@@ -20,3 +21,12 @@ class WorkOrderRepository:
     async def rollback(self) -> None:
         """回滚当前事务。"""
         await self.session.rollback()
+
+    async def list_by_owner_id(self, owner_id: int) -> list[WorkOrder]:
+        statement = (
+            select(WorkOrder)
+            .where(WorkOrder.owner_id == owner_id)
+            .order_by(WorkOrder.id)
+        )
+        result = await self.session.scalars(statement)
+        return list(result.all())

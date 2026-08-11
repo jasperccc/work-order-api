@@ -15,3 +15,6 @@ class WorkOrderService:
             await self.repository.rollback()
             raise
         return created_order
+
+    async def list_for_user(self, owner_id: int) -> list[WorkOrder]:
+        return await self.repository.list_by_owner_id(owner_id)

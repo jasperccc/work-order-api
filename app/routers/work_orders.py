@@ -24,3 +24,16 @@ async def create_work_order(
         owner_id=current_user.id,
     )
     return WorkOrderResponse.model_validate(work_order)
+
+
+@router.get(
+    "",
+    response_model=list[WorkOrderResponse],
+)
+async def list_work_orders(
+    current_user: CurrentUserDependency,
+    service: WorkOrderServiceDependency,
+) -> list[WorkOrderResponse]:
+    work_orders = await service.list_for_user(current_user.id)
+
+    return [WorkOrderResponse.model_validate(work_order) for work_order in work_orders]
