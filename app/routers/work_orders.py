@@ -1,7 +1,11 @@
 from fastapi import APIRouter, status
 
 from app.dependencies import CurrentUserDependency, WorkOrderServiceDependency
-from app.schemas.work_order import WorkOrderCreate, WorkOrderResponse
+from app.schemas.work_order import (
+    WorkOrderCreate,
+    WorkOrderResponse,
+    WorkOrderUpdate,
+)
 
 router = APIRouter(
     prefix="/api/work-orders",
@@ -49,4 +53,22 @@ async def get_work_order(
     service: WorkOrderServiceDependency,
 ) -> WorkOrderResponse:
     work_order = await service.get_for_user(work_order_id, current_user.id)
+    return WorkOrderResponse.model_validate(work_order)
+
+
+@router.patch(
+    "/{work_order_id}",
+    response_model=WorkOrderResponse,
+)
+async def update_work_order(
+    work_order_id: int,
+    data: WorkOrderUpdate,
+    current_user: CurrentUserDependency,
+    service: WorkOrderServiceDependency,
+) -> WorkOrderResponse:
+    work_order = await service.update_for_user(
+        work_order_id=work_order_id,
+        owner_id=current_user.id,
+        title=data.title,
+    )
     return WorkOrderResponse.model_validate(work_order)

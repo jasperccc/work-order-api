@@ -29,3 +29,18 @@ class WorkOrderService:
         if work_order is None or work_order.owner_id != owner_id:
             raise WorkOrderNotFoundError("工单不存在")
         return work_order
+
+    async def update_for_user(
+        self,
+        work_order_id: int,
+        owner_id: int,
+        title: str,
+    ) -> WorkOrder:
+        work_order = await self.get_for_user(work_order_id, owner_id)
+        work_order.title = title
+        try:
+            await self.repository.commit()
+        except Exception:
+            await self.repository.rollback()
+            raise
+        return work_order
