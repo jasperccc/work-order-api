@@ -44,3 +44,12 @@ class WorkOrderService:
             await self.repository.rollback()
             raise
         return work_order
+
+    async def delete_for_user(self, work_order_id: int, owner_id: int) -> None:
+        work_order = await self.get_for_user(work_order_id, owner_id)
+        try:
+            await self.repository.delete(work_order)
+            await self.repository.commit()
+        except Exception:
+            await self.repository.rollback()
+            raise

@@ -271,3 +271,101 @@ async def test_update_work_order_returns_404_for_another_users_work_order(
 
     assert get_response.status_code == 200
     assert get_response.json()["title"] == "用户A的工单"
+
+
+@pytest.mark.asyncio
+async def test_delete_work_order_deletes_current_users_work_order(
+    api_client: AsyncClient,
+) -> None:
+    register_response = await api_client.post(
+        "/api/auth/register", json={"email": "ccc@163.com", "password": "12345678"}
+    )
+    assert register_response.status_code == 201
+
+    login_response = await api_client.post(
+        "/api/auth/login", json={"email": "ccc@163.com", "password": "12345678"}
+    )
+
+    assert login_response.status_code == 200
+    access_token = login_response.json()["access_token"]
+
+    create_response = await api_client.post(
+        "/api/work-orders",
+        json={"title": "用户A的工单"},
+        headers={
+            "Authorization": f"Bearer {access_token}",
+        },
+    )
+    assert create_response.status_code == 201
+    work_order_id = create_response.json()["id"]
+
+    delete_response = await api_client.delete(
+        f"/api/work-orders/{work_order_id}",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+    assert delete_response.status_code == 204
+    assert delete_response.content == b""
+
+    get_response = await api_client.get(
+        f"/api/work-orders/{work_order_id}",
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+    assert get_response.status_code == 404
+    assert get_response.json() == {"detail": "工单不存在"}
+
+
+@pytest.mark.asyncio
+async def test_delete_work_order_returns_404_for_another_users_work_order(
+    api_client: AsyncClient,
+) -> None:
+    a_register_response = await api_client.post(
+        "/api/auth/register",
+        json={"email": "A@163.com", "password": "12345678"},
+    )
+    assert a_register_response.status_code == 201
+
+    a_login_response = await api_client.post(
+        "/api/auth/login",
+        json={"email": "A@163.com", "password": "12345678"},
+    )
+    assert a_login_response.status_code == 200
+    a_access_token = a_login_response.json()["access_token"]
+
+    b_register_response = await api_client.post(
+        "/api/auth/register",
+        json={"email": "B@163.com", "password": "12345678"},
+    )
+    assert b_register_response.status_code == 201
+
+    b_login_response = await api_client.post(
+        "/api/auth/login",
+        json={"email": "B@163.com", "password": "12345678"},
+    )
+    assert b_login_response.status_code == 200
+    b_access_token = b_login_response.json()["access_token"]
+
+    create_a_response = await api_client.post(
+        "/api/work-orders",
+        json={"title": "用户A的工单"},
+        headers={"Authorization": f"Bearer {a_access_token}"},
+    )
+    assert create_a_response.status_code == 201
+    work_order_id = create_a_response.json()["id"]
+
+    delete_response = await api_client.delete(
+        f"/api/work-orders/{work_order_id}",
+        headers={"Authorization": f"Bearer {b_access_token}"},
+    )
+
+    assert delete_response.status_code == 404
+    assert delete_response.json() == {"detail": "工单不存在"}
+
+    get_response = await api_client.get(
+        f"/api/work-orders/{work_order_id}",
+        headers={"Authorization": f"Bearer {a_access_token}"},
+    )
+
+    assert get_response.status_code == 200
+    assert get_response.json()["title"] == "用户A的工单"

@@ -72,3 +72,18 @@ async def update_work_order(
         title=data.title,
     )
     return WorkOrderResponse.model_validate(work_order)
+
+
+@router.delete(
+    "/{work_order_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_work_order(
+    work_order_id: int,
+    current_user: CurrentUserDependency,
+    service: WorkOrderServiceDependency,
+) -> None:
+    await service.delete_for_user(
+        work_order_id=work_order_id,
+        owner_id=current_user.id,
+    )

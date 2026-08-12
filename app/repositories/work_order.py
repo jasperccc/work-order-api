@@ -35,3 +35,6 @@ class WorkOrderRepository:
         statement = select(WorkOrder).where(WorkOrder.id == work_order_id)
         result = await self.session.scalars(statement)
         return result.one_or_none()
+
+    async def delete(self, work_order: WorkOrder) -> None:
+        await self.session.delete(work_order)
