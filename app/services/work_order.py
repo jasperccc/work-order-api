@@ -53,3 +53,6 @@ class WorkOrderService:
         except Exception:
             await self.repository.rollback()
             raise
+
+    async def list_all(self) -> list[WorkOrder]:
+        return await self.repository.list_all()

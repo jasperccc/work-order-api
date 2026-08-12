@@ -6,8 +6,10 @@ from app.exceptions import (
     EmailAlreadyRegisteredError,
     InvalidCredentialsError,
     InvalidTokenError,
+    PermissionDeniedError,
     WorkOrderNotFoundError,
 )
+from app.routers.admin import router as admin_router
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
 from app.routers.work_orders import router as work_orders_router
@@ -17,6 +19,7 @@ app = FastAPI(title=settings.app_name)
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(work_orders_router)
+app.include_router(admin_router)
 
 
 @app.exception_handler(EmailAlreadyRegisteredError)
@@ -61,6 +64,17 @@ async def handle_work_order_not_found(
 ) -> JSONResponse:
     return JSONResponse(
         status_code=status.HTTP_404_NOT_FOUND,
+        content={"detail": str(exc)},
+    )
+
+
+@app.exception_handler(PermissionDeniedError)
+async def handle_permission_denied(
+    _request: Request,
+    exc: PermissionDeniedError,
+) -> JSONResponse:
+    return JSONResponse(
+        status_code=status.HTTP_403_FORBIDDEN,
         content={"detail": str(exc)},
     )
 

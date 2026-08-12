@@ -5,7 +5,8 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
-from app.exceptions import InvalidTokenError
+from app.enums import UserRole
+from app.exceptions import InvalidTokenError, PermissionDeniedError
 from app.models import User
 from app.repositories.user import UserRepository
 from app.repositories.work_order import WorkOrderRepository
@@ -72,4 +73,18 @@ async def get_current_user(
 CurrentUserDependency = Annotated[
     User,
     Depends(get_current_user),
+]
+
+
+async def get_current_admin_user(
+    current_user: CurrentUserDependency,
+) -> User:
+    if current_user.role != UserRole.ADMIN:
+        raise PermissionDeniedError("权限不足")
+    return current_user
+
+
+AdminUserDependency = Annotated[
+    User,
+    Depends(get_current_admin_user),
 ]

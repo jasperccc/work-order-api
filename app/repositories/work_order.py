@@ -38,3 +38,8 @@ class WorkOrderRepository:
 
     async def delete(self, work_order: WorkOrder) -> None:
         await self.session.delete(work_order)
+
+    async def list_all(self) -> list[WorkOrder]:
+        statement = select(WorkOrder).order_by(WorkOrder.id)
+        result = await self.session.scalars(statement)
+        return list(result.all())

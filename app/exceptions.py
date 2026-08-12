@@ -12,3 +12,7 @@ class InvalidTokenError(Exception):
 
 class WorkOrderNotFoundError(Exception):
     """工单不存在或当前用户无权访问。"""
+
+
+class PermissionDeniedError(Exception):
+    """当前用户权限不足。"""

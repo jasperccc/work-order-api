@@ -1,5 +1,9 @@
 import pytest
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.enums import UserRole
+from app.models import User
 
 
 @pytest.mark.asyncio
@@ -369,3 +373,126 @@ async def test_delete_work_order_returns_404_for_another_users_work_order(
 
     assert get_response.status_code == 200
     assert get_response.json()["title"] == "用户A的工单"
+
+
+@pytest.mark.asyncio
+async def test_list_all_work_orders_returns_403_for_normal_user(
+    api_client: AsyncClient,
+) -> None:
+    register_response = await api_client.post(
+        "/api/auth/register",
+        json={
+            "email": "user@example.com",
+            "password": "12345678",
+        },
+    )
+    assert register_response.status_code == 201
+
+    login_response = await api_client.post(
+        "/api/auth/login",
+        json={
+            "email": "user@example.com",
+            "password": "12345678",
+        },
+    )
+    assert login_response.status_code == 200
+    access_token = login_response.json()["access_token"]
+
+    response = await api_client.get(
+        "/api/admin/work-orders",
+        headers={
+            "Authorization": f"Bearer {access_token}",
+        },
+    )
+
+    assert response.status_code == 403
+    assert response.json() == {"detail": "权限不足"}
+
+
+@pytest.mark.asyncio
+async def test_list_all_work_orders_returns_all_work_orders_for_admin(
+    api_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    user_a_register_response = await api_client.post(
+        "/api/auth/register",
+        json={"email": "A@163.com", "password": "12345678"},
+    )
+    assert user_a_register_response.status_code == 201
+
+    user_a_login_response = await api_client.post(
+        "/api/auth/login",
+        json={"email": "A@163.com", "password": "12345678"},
+    )
+    assert user_a_login_response.status_code == 200
+    user_a_token = user_a_login_response.json()["access_token"]
+
+    user_b_register_response = await api_client.post(
+        "/api/auth/register",
+        json={"email": "B@163.com", "password": "12345678"},
+    )
+    assert user_b_register_response.status_code == 201
+
+    user_b_login_response = await api_client.post(
+        "/api/auth/login",
+        json={"email": "B@163.com", "password": "12345678"},
+    )
+    assert user_b_login_response.status_code == 200
+    user_b_token = user_b_login_response.json()["access_token"]
+
+    admin_register_response = await api_client.post(
+        "/api/auth/register",
+        json={"email": "admin@163.com", "password": "12345678"},
+    )
+    assert admin_register_response.status_code == 201
+    admin_user_id = admin_register_response.json()["id"]
+
+    admin_user = await db_session.get(User, admin_user_id)
+    assert admin_user is not None
+    admin_user.role = UserRole.ADMIN
+    await db_session.commit()
+
+    admin_login_response = await api_client.post(
+        "/api/auth/login",
+        json={"email": "admin@163.com", "password": "12345678"},
+    )
+    assert admin_login_response.status_code == 200
+    admin_token = admin_login_response.json()["access_token"]
+
+    create_a_response = await api_client.post(
+        "/api/work-orders",
+        json={"title": "用户A的工单"},
+        headers={"Authorization": f"Bearer {user_a_token}"},
+    )
+    assert create_a_response.status_code == 201
+
+    create_b_response = await api_client.post(
+        "/api/work-orders",
+        json={"title": "用户B的工单"},
+        headers={"Authorization": f"Bearer {user_b_token}"},
+    )
+    assert create_b_response.status_code == 201
+
+    response = await api_client.get(
+        "/api/admin/work-orders",
+        headers={"Authorization": f"Bearer {admin_token}"},
+    )
+
+    assert response.status_code == 200
+
+    response_body = response.json()
+    assert len(response_body) == 2
+    assert {item["title"] for item in response_body} == {
+        "用户A的工单",
+        "用户B的工单",
+    }
+
+
+@pytest.mark.asyncio
+async def test_list_all_work_orders_requires_authentication(
+    api_client: AsyncClient,
+) -> None:
+    response = await api_client.get("/api/admin/work-orders")
+
+    assert response.status_code == 401
+    assert response.headers["www-authenticate"] == "Bearer"
