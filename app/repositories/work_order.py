@@ -22,11 +22,18 @@ class WorkOrderRepository:
         """回滚当前事务。"""
         await self.session.rollback()
 
-    async def list_by_owner_id(self, owner_id: int) -> list[WorkOrder]:
+    async def list_by_owner_id(
+        self,
+        owner_id: int,
+        limit: int,
+        offset: int,
+    ) -> list[WorkOrder]:
         statement = (
             select(WorkOrder)
             .where(WorkOrder.owner_id == owner_id)
             .order_by(WorkOrder.id)
+            .limit(limit)
+            .offset(offset)
         )
         result = await self.session.scalars(statement)
         return list(result.all())

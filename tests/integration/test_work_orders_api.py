@@ -496,3 +496,75 @@ async def test_list_all_work_orders_requires_authentication(
 
     assert response.status_code == 401
     assert response.headers["www-authenticate"] == "Bearer"
+
+
+@pytest.mark.asyncio
+async def test_list_work_orders_supports_limit_and_offset(
+    api_client: AsyncClient,
+) -> None:
+    register_response = await api_client.post(
+        "/api/auth/register",
+        json={"email": "A@163.com", "password": "12345678"},
+    )
+    assert register_response.status_code == 201
+
+    login_response = await api_client.post(
+        "/api/auth/login",
+        json={"email": "A@163.com", "password": "12345678"},
+    )
+    assert login_response.status_code == 200
+    access_token = login_response.json()["access_token"]
+
+    for number in range(1, 6):
+        create_response = await api_client.post(
+            "/api/work-orders",
+            headers={"Authorization": f"Bearer {access_token}"},
+            json={"title": f"工单{number}"},
+        )
+        assert create_response.status_code == 201
+
+    response = await api_client.get(
+        "/api/work-orders",
+        params={"limit": 2, "offset": 2},
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+    assert response.status_code == 200
+
+    response_body = response.json()
+    assert len(response_body) == 2
+    assert [item["title"] for item in response_body] == ["工单3", "工单4"]
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"limit": 0, "offset": 0},
+        {"limit": 101, "offset": 0},
+        {"limit": 20, "offset": -1},
+    ],
+)
+@pytest.mark.asyncio
+async def test_list_work_orders_rejects_invalid_pagination(
+    api_client: AsyncClient,
+    params: dict[str, int],
+) -> None:
+    register_response = await api_client.post(
+        "/api/auth/register",
+        json={"email": "A@163.com", "password": "12345678"},
+    )
+    assert register_response.status_code == 201
+
+    login_response = await api_client.post(
+        "/api/auth/login",
+        json={"email": "A@163.com", "password": "12345678"},
+    )
+    assert login_response.status_code == 200
+    access_token = login_response.json()["access_token"]
+
+    response = await api_client.get(
+        "/api/work-orders",
+        params=params,
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+    assert response.status_code == 422

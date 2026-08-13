@@ -17,8 +17,17 @@ class WorkOrderService:
             raise
         return created_order
 
-    async def list_for_user(self, owner_id: int) -> list[WorkOrder]:
-        return await self.repository.list_by_owner_id(owner_id)
+    async def list_for_user(
+        self,
+        owner_id: int,
+        limit: int,
+        offset: int,
+    ) -> list[WorkOrder]:
+        return await self.repository.list_by_owner_id(
+            owner_id,
+            limit,
+            offset,
+        )
 
     async def get_for_user(
         self,
