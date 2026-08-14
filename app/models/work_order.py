@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.enums import WorkOrderStatus
@@ -9,7 +9,14 @@ from app.models.base import Base
 
 class WorkOrder(Base):
     __tablename__ = "work_orders"
-
+    __table_args__ = (
+        Index(
+            "ix_work_orders_owner_status_id",
+            "owner_id",
+            "status",
+            "id",
+        ),
+    )
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(255))
     status: Mapped[WorkOrderStatus] = mapped_column(
