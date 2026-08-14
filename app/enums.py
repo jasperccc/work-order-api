@@ -8,3 +8,4 @@ class UserRole(StrEnum):
 
 class WorkOrderStatus(StrEnum):
     OPEN = "open"
+    CLOSED = "closed"

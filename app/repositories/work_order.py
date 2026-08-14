@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.enums import WorkOrderStatus
 from app.models import WorkOrder
 
 
@@ -27,14 +28,16 @@ class WorkOrderRepository:
         owner_id: int,
         limit: int,
         offset: int,
+        status_filter: WorkOrderStatus | None = None,
     ) -> list[WorkOrder]:
-        statement = (
-            select(WorkOrder)
-            .where(WorkOrder.owner_id == owner_id)
-            .order_by(WorkOrder.id)
-            .limit(limit)
-            .offset(offset)
+        statement = select(WorkOrder).where(
+            WorkOrder.owner_id == owner_id,
         )
+        if status_filter is not None:
+            statement = statement.where(
+                WorkOrder.status == status_filter,
+            )
+        statement = statement.order_by(WorkOrder.id).limit(limit).offset(offset)
         result = await self.session.scalars(statement)
         return list(result.all())
 

@@ -2,8 +2,8 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.enums import UserRole
-from app.models import User
+from app.enums import UserRole, WorkOrderStatus
+from app.models import User, WorkOrder
 
 
 @pytest.mark.asyncio
@@ -564,6 +564,79 @@ async def test_list_work_orders_rejects_invalid_pagination(
     response = await api_client.get(
         "/api/work-orders",
         params=params,
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_list_work_orders_filters_by_status(
+    api_client: AsyncClient,
+    db_session: AsyncSession,
+) -> None:
+    register_response = await api_client.post(
+        "/api/auth/register",
+        json={"email": "filter@example.com", "password": "12345678"},
+    )
+    assert register_response.status_code == 201
+
+    login_response = await api_client.post(
+        "/api/auth/login",
+        json={"email": "filter@example.com", "password": "12345678"},
+    )
+    assert login_response.status_code == 200
+    access_token = login_response.json()["access_token"]
+
+    created_ids: list[int] = []
+    for title in ["开放工单1", "待关闭工单", "开放工单2"]:
+        create_response = await api_client.post(
+            "/api/work-orders",
+            headers={"Authorization": f"Bearer {access_token}"},
+            json={"title": title},
+        )
+        assert create_response.status_code == 201
+        created_ids.append(create_response.json()["id"])
+
+    work_order = await db_session.get(WorkOrder, created_ids[1])
+    assert work_order is not None
+    work_order.status = WorkOrderStatus.CLOSED
+    await db_session.commit()
+
+    response = await api_client.get(
+        "/api/work-orders",
+        params={"status": "closed"},
+        headers={"Authorization": f"Bearer {access_token}"},
+    )
+
+    assert response.status_code == 200
+
+    response_body = response.json()
+    assert len(response_body) == 1
+    assert response_body[0]["title"] == "待关闭工单"
+    assert response_body[0]["status"] == "closed"
+
+
+@pytest.mark.asyncio
+async def test_list_work_orders_rejects_invalid_status(
+    api_client: AsyncClient,
+) -> None:
+    register_response = await api_client.post(
+        "/api/auth/register",
+        json={"email": "filter@example.com", "password": "12345678"},
+    )
+    assert register_response.status_code == 201
+
+    login_response = await api_client.post(
+        "/api/auth/login",
+        json={"email": "filter@example.com", "password": "12345678"},
+    )
+    assert login_response.status_code == 200
+    access_token = login_response.json()["access_token"]
+
+    response = await api_client.get(
+        "/api/work-orders",
+        params={"status": "unknown"},
         headers={"Authorization": f"Bearer {access_token}"},
     )
 

@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Query, status
 
 from app.dependencies import CurrentUserDependency, WorkOrderServiceDependency
+from app.enums import WorkOrderStatus
 from app.schemas.work_order import (
     WorkOrderCreate,
     WorkOrderResponse,
@@ -41,11 +42,16 @@ async def list_work_orders(
     service: WorkOrderServiceDependency,
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     offset: Annotated[int, Query(ge=0)] = 0,
+    status_filter: Annotated[
+        WorkOrderStatus | None,
+        Query(alias="status"),
+    ] = None,
 ) -> list[WorkOrderResponse]:
     work_orders = await service.list_for_user(
         current_user.id,
         limit=limit,
         offset=offset,
+        status_filter=status_filter,
     )
 
     return [WorkOrderResponse.model_validate(work_order) for work_order in work_orders]

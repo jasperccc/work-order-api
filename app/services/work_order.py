@@ -1,3 +1,4 @@
+from app.enums import WorkOrderStatus
 from app.exceptions import WorkOrderNotFoundError
 from app.models import WorkOrder
 from app.repositories.work_order import WorkOrderRepository
@@ -22,11 +23,13 @@ class WorkOrderService:
         owner_id: int,
         limit: int,
         offset: int,
+        status_filter: WorkOrderStatus | None = None,
     ) -> list[WorkOrder]:
         return await self.repository.list_by_owner_id(
-            owner_id,
-            limit,
-            offset,
+            owner_id=owner_id,
+            limit=limit,
+            offset=offset,
+            status_filter=status_filter,
         )
 
     async def get_for_user(
